@@ -32,6 +32,21 @@ class EmptyLatentImageSDXL:
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
         return ({"samples":latent}, )
 
+class ToggleDifferentText:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {"text": ("STRING", {"multiline": True, "forceInput": True}),
+                             "use_different_text": ("BOOLEAN", {"default": True}),
+                             "different_text": ("STRING", {"multiline": True}),}}
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "choose"
+
+    CATEGORY = "utils"
+
+    def choose(self, text, use_different_text, different_text):
+        return text if not use_different_text else different_text
+
 NODE_CLASS_MAPPINGS = {
   'Empty Latent Image (SDXL)': EmptyLatentImageSDXL,
+  'Toggle Different Text': ToggleDifferentText,
 }
