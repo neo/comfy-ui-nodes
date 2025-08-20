@@ -1,5 +1,39 @@
 import torch
 
+import comfy.model_management
+
+
+class EmptyLatentImageQwen:
+    # https://huggingface.co/Qwen/Qwen-Image#quick-start
+    SUPPORTED_DIMENSIONS = {
+        "16:9 (1664 x 928)": (1664, 928),
+        "3:2 (1584 x 1056)": (1584, 1056),
+        "4:3 (1472 x 1140)": (1472, 1140),
+        "1:1 (1328 x 1328)": (1328, 1328),
+        "3:4 (1140 x 1472)": (1140, 1472),
+        "2:3 (1056 x 1584)": (1056, 1584),
+        "9:16 (928 x 1664)": (928, 1664),
+    }
+
+    def __init__(self):
+        self.device = comfy.model_management.intermediate_device()
+
+    @classmethod
+    def INPUT_TYPES(s):
+        dimensions = list(s.SUPPORTED_DIMENSIONS)
+        return {"required": { "aspect_ratio": (dimensions, {"default": dimensions[len(dimensions) // 2]}),
+                              "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}) }}
+    RETURN_TYPES = ("LATENT",)
+    FUNCTION = "generate"
+
+    CATEGORY = "latent"
+
+    def generate(self, aspect_ratio, batch_size=1):
+        width, height = self.SUPPORTED_DIMENSIONS[aspect_ratio]
+        latent = torch.zeros([batch_size, 4, height // 8, width // 8], device=self.device)
+        return ({"samples":latent}, )
+        
+
 class EmptyLatentImageSDXL:
     # https://platform.stability.ai/docs/features/api-parameters#about-dimensions
     SUPPORTED_DIMENSIONS = {
@@ -14,14 +48,14 @@ class EmptyLatentImageSDXL:
         "5:12 (640 x 1536)": (640, 1536),
     }
 
-    def __init__(self, device="cpu"):
-        self.device = device
+    def __init__(self):
+        self.device = comfy.model_management.intermediate_device()
 
     @classmethod
     def INPUT_TYPES(s):
         dimensions = list(s.SUPPORTED_DIMENSIONS)
         return {"required": { "aspect_ratio": (dimensions, {"default": dimensions[len(dimensions) // 2]}),
-                              "batch_size": ("INT", {"default": 1, "min": 1, "max": 64}) }}
+                              "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}) }}
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "generate"
 
@@ -29,8 +63,9 @@ class EmptyLatentImageSDXL:
 
     def generate(self, aspect_ratio, batch_size=1):
         width, height = self.SUPPORTED_DIMENSIONS[aspect_ratio]
-        latent = torch.zeros([batch_size, 4, height // 8, width // 8])
+        latent = torch.zeros([batch_size, 16, height // 8, width // 8], device=self.device)
         return ({"samples":latent}, )
+
 
 class ToggleDifferentText:
     @classmethod
@@ -47,6 +82,7 @@ class ToggleDifferentText:
         return text if not use_different_text else different_text
 
 NODE_CLASS_MAPPINGS = {
+  'Empty Latent Image (Qwen)': EmptyLatentImageQwen,
   'Empty Latent Image (SDXL)': EmptyLatentImageSDXL,
   'Toggle Different Text': ToggleDifferentText,
 }
