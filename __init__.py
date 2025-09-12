@@ -67,6 +67,29 @@ class EmptyLatentImageSDXL:
         return ({"samples":latent}, )
 
 
+class ToggleDifferentStepsCfgSet:
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "steps": ("INT", {"default": 20, "min": 1, "max": 10000, "tooltip": "The number of steps used in the denoising process."}),
+                "cfg": ("FLOAT", {"default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01, "tooltip": "The Classifier-Free Guidance scale balances creativity and adherence to the prompt. Higher values result in images more closely matching the prompt however too high values will negatively impact quality."}),
+                "use_the_other_set": ("BOOLEAN", {"default": False}),
+                "the_other_steps": ("INT", {"default": 4, "min": 1, "max": 10000, "tooltip": "The number of steps used in the denoising process."}),
+                "the_other_cfg": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01, "tooltip": "The Classifier-Free Guidance scale balances creativity and adherence to the prompt. Higher values result in images more closely matching the prompt however too high values will negatively impact quality."}),
+            }
+        }
+
+    RETURN_TYPES = ("INT", "FLOAT")
+    FUNCTION = "choose"
+
+    CATEGORY = "utils"
+
+    def choose(self, steps, cfg, use_the_other_set, the_other_steps, the_other_cfg):
+        return (steps, cfg) if not use_the_other_set else (the_other_steps, the_other_cfg)
+
+
 class ToggleDifferentText:
     @classmethod
     def INPUT_TYPES(s):
@@ -84,5 +107,6 @@ class ToggleDifferentText:
 NODE_CLASS_MAPPINGS = {
   'Empty Latent Image (Qwen)': EmptyLatentImageQwen,
   'Empty Latent Image (SDXL)': EmptyLatentImageSDXL,
+  'Toggle Different Steps/CFG Set': ToggleDifferentStepsCfgSet,
   'Toggle Different Text': ToggleDifferentText,
 }
