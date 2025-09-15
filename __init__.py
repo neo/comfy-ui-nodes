@@ -1,6 +1,28 @@
 import torch
 
 import comfy.model_management
+from nodes import VAEEncode
+from comfy_extras.nodes_edit_model import ReferenceLatent
+
+
+class EditReferenceImage(ReferenceLatent, VAEEncode):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "conditioning": ("CONDITIONING",),
+                "pixels": ("IMAGE",),
+                "vae": ("VAE",),
+            }
+        }
+
+    FUNCTION = "append_encoded"
+
+    DESCRIPTION = "This node combines `ReferenceLatent` and `VAEEncode`."
+
+    def append_encoded(self, conditioning, vae, pixels):
+        (latent,) = self.encode(vae, pixels)
+        return self.append(conditioning, latent)
 
 
 class EmptyLatentImageQwen:
@@ -168,6 +190,7 @@ class ToggleDifferentText:
 
 
 NODE_CLASS_MAPPINGS = {
+    "Edit Reference Image": EditReferenceImage,
     "Empty Latent Image (Qwen)": EmptyLatentImageQwen,
     "Empty Latent Image (SDXL)": EmptyLatentImageSDXL,
     "Toggle Different Steps/CFG Set": ToggleDifferentStepsCfgSet,
