@@ -3,6 +3,40 @@ import torch
 import comfy.model_management
 from nodes import VAEEncode
 from comfy_extras.nodes_edit_model import ReferenceLatent
+from comfy_extras.nodes_post_processing import ImageScaleToTotalPixels
+from comfy_extras.nodes_images import ImageStitch
+
+
+class ScaleImageStitch(ImageStitch, ImageScaleToTotalPixels):
+    @classmethod
+    def INPUT_TYPES(s):
+        stitch = ImageStitch.INPUT_TYPES()
+        scale = ImageScaleToTotalPixels.INPUT_TYPES()
+        del scale["required"]["image"]
+        return {
+            "required": stitch["required"] | scale["required"],
+            "optional": stitch["optional"],
+        }
+
+    FUNCTION = "stitch_and_scale"
+
+    DESCRIPTION = "This node combines `ImageStitch` and `ImageScaleToTotalPixels`."
+
+    def stitch_and_scale(
+        self,
+        image1,
+        direction,
+        match_image_size,
+        spacing_width,
+        spacing_color,
+        upscale_method,
+        megapixels,
+        image2=None,
+    ):
+        (image,) = self.stitch(
+            image1, direction, match_image_size, spacing_width, spacing_color, image2
+        )
+        return self.upscale(image, upscale_method, megapixels)
 
 
 class EditReferenceImage(ReferenceLatent, VAEEncode):
@@ -190,6 +224,7 @@ class ToggleDifferentText:
 
 
 NODE_CLASS_MAPPINGS = {
+    "Scale Image Stitch": ScaleImageStitch,
     "Edit Reference Image": EditReferenceImage,
     "Empty Latent Image (Qwen)": EmptyLatentImageQwen,
     "Empty Latent Image (SDXL)": EmptyLatentImageSDXL,
