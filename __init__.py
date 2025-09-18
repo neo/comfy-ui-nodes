@@ -186,7 +186,7 @@ class ToggleDifferentText:
     CATEGORY = "utils"
 
     def choose(self, text, use_different_text, different_text):
-        return text if not use_different_text else different_text
+        return (text if not use_different_text else different_text,)
 
 
 NODE_CLASS_MAPPINGS = {
